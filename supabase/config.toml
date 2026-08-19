@@ -1,0 +1,19 @@
+project_id = "svsixyhhdqngkcmjqyao"
+
+[functions.verify-submission]
+verify_jwt = false
+
+[functions.admin-leaderboard]
+verify_jwt = false
+
+[functions.admin-submissions]
+verify_jwt = false
+
+[functions.admin-stats]
+verify_jwt = false
+
+[functions.admin-projects]
+verify_jwt = false
+
+[functions.admin-export]
+verify_jwt = false
