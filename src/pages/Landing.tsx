@@ -196,7 +196,7 @@ export default function Landing() {
                 <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
                 <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/30" />
                 <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/30" />
-                <span className="ml-3 text-xs text-muted-foreground truncate">projectverifier.vercel.app/admin</span>
+                <span className="ml-3 text-xs text-muted-foreground truncate">project-verify-six.vercel.app/admin</span>
               </div>
               <div className="w-full aspect-video overflow-hidden bg-muted">
                 <img
