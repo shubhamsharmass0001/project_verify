@@ -1,5 +1,7 @@
-# 📘 Student Verification Portal
+# 📘 Student Verification Portal (VerifyHub)
 ### Coursera Certificate & LinkedIn Submission Validator
+
+🌐 **Live Demo**: [https://project-verify-six.vercel.app/](https://project-verify-six.vercel.app/)
 
 ---
 
