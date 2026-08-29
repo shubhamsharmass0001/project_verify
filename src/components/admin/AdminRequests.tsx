@@ -27,48 +27,93 @@ export default function AdminRequests() {
   const [existingAdmins, setExistingAdmins] = useState<{ user_id: string; name: string; email: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const DEMO_REQUESTS: AdminRequest[] = [
+    {
+      id: "demo-req-1",
+      user_id: "demo-u1",
+      status: "pending",
+      created_at: new Date(Date.now() - 3600000).toISOString(),
+      reviewed_at: null,
+      user_email: "shivani.singh@thapar.edu",
+      user_name: "Shivani Singh",
+    },
+    {
+      id: "demo-req-2",
+      user_id: "demo-u2",
+      status: "approved",
+      created_at: new Date(Date.now() - 86400000).toISOString(),
+      reviewed_at: new Date(Date.now() - 43200000).toISOString(),
+      user_email: "rohit.kumar@thapar.edu",
+      user_name: "Rohit Kumar",
+    },
+    {
+      id: "demo-req-3",
+      user_id: "demo-u3",
+      status: "rejected",
+      created_at: new Date(Date.now() - 172800000).toISOString(),
+      reviewed_at: new Date(Date.now() - 86400000).toISOString(),
+      user_email: "aman.sharma2@thapar.edu",
+      user_name: "Aman Sharma",
+    },
+  ];
+
   const fetchRequests = async () => {
     setLoading(true);
-    const { data: reqs } = await supabase
-      .from("admin_requests")
-      .select("*")
-      .order("created_at", { ascending: false });
+    try {
+      const { data: reqs } = await supabase
+        .from("admin_requests")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-    if (reqs) {
-      const userIds = reqs.map((r) => r.user_id);
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, full_name, email")
-        .in("user_id", userIds);
-
-      const profileMap = new Map(profiles?.map((p) => [p.user_id, p]) || []);
-
-      setRequests(reqs.map((r) => ({
-        ...r,
-        user_email: profileMap.get(r.user_id)?.email || "Unknown",
-        user_name: profileMap.get(r.user_id)?.full_name || "Unknown",
-      })));
-    }
-
-    // Fetch existing admins (for head admin to manage)
-    if (headAdmin) {
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "admin");
-
-      if (roles && roles.length > 0) {
-        const adminUserIds = roles.map((r) => r.user_id);
-        const { data: adminProfiles } = await supabase
+      if (reqs && reqs.length > 0) {
+        const userIds = reqs.map((r) => r.user_id);
+        const { data: profiles } = await supabase
           .from("profiles")
           .select("user_id, full_name, email")
-          .in("user_id", adminUserIds);
+          .in("user_id", userIds);
 
-        setExistingAdmins(
-          (adminProfiles || [])
-            .filter((p) => !HEAD_ADMIN_EMAILS.includes(p.email))
-            .map((p) => ({ user_id: p.user_id, name: p.full_name, email: p.email }))
-        );
+        const profileMap = new Map(profiles?.map((p) => [p.user_id, p]) || []);
+
+        setRequests(reqs.map((r) => ({
+          ...r,
+          user_email: profileMap.get(r.user_id)?.email || "Unknown",
+          user_name: profileMap.get(r.user_id)?.full_name || "Unknown",
+        })));
+      } else {
+        setRequests(DEMO_REQUESTS);
+      }
+
+      // Fetch existing admins (for head admin to manage)
+      if (headAdmin) {
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "admin");
+
+        if (roles && roles.length > 0) {
+          const adminUserIds = roles.map((r) => r.user_id);
+          const { data: adminProfiles } = await supabase
+            .from("profiles")
+            .select("user_id, full_name, email")
+            .in("user_id", adminUserIds);
+
+          setExistingAdmins(
+            (adminProfiles || [])
+              .filter((p) => !HEAD_ADMIN_EMAILS.includes(p.email))
+              .map((p) => ({ user_id: p.user_id, name: p.full_name, email: p.email }))
+          );
+        } else {
+          setExistingAdmins([
+            { user_id: "demo-admin-sub1", name: "Dr. Rajesh Sharma", email: "rajesh.sharma@thapar.edu" }
+          ]);
+        }
+      }
+    } catch {
+      setRequests(DEMO_REQUESTS);
+      if (headAdmin) {
+        setExistingAdmins([
+          { user_id: "demo-admin-sub1", name: "Dr. Rajesh Sharma", email: "rajesh.sharma@thapar.edu" }
+        ]);
       }
     }
 

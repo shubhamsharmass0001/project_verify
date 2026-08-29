@@ -308,15 +308,59 @@ function AuthForm({
 export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
-  const { user } = useAuth();
+  const { user, loginAsDemo } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => { if (user) navigate("/"); }, [user, navigate]);
 
+  const handleDemoAccess = (role: "student" | "admin") => {
+    loginAsDemo(role);
+    if (role === "admin") {
+      navigate("/admin");
+    } else {
+      navigate("/submit");
+    }
+  };
+
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
+        {/* Sample / Demo Bypass Banner */}
+        <div className="bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-yellow-500/15 border-b border-amber-500/20 px-6 py-4 rounded-t-lg">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs">
+              ⚡
+            </span>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+              Sample Demo (Interview Bypass)
+            </h3>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">
+            Instant 1-click access without requiring OTP or @thapar.edu verification:
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="text-xs h-8 border-amber-500/30 bg-background/80 hover:bg-amber-500/10 text-foreground font-medium"
+              onClick={() => handleDemoAccess("student")}
+            >
+              🎓 Sample Student
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="text-xs h-8 border-amber-500/30 bg-background/80 hover:bg-amber-500/10 text-foreground font-medium"
+              onClick={() => handleDemoAccess("admin")}
+            >
+              🛡️ Sample Admin
+            </Button>
+          </div>
+        </div>
+
+        <CardHeader className="text-center pt-5">
           <CardTitle>{showForgot ? "Reset Password" : isSignUp ? "Create Account" : "Welcome Back"}</CardTitle>
           <CardDescription>
             {showForgot ? "Enter your @thapar.edu email to receive a reset link" : isSignUp ? "Sign up with your @thapar.edu email" : "Sign in to your account"}

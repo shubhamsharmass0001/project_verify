@@ -18,7 +18,9 @@ const submissionSchema = z.object({
     .includes("coursera.org/account/accomplishments/verify/", { message: "Must be a valid Coursera verification link" }),
   linkedinLink: z.string()
     .url("Invalid URL format")
-    .includes("linkedin.com", { message: "Must be a valid LinkedIn link" }),
+    .refine((val) => val.includes("linkedin.com") || val.includes("lnkd.in"), {
+      message: "Must be a valid LinkedIn link (linkedin.com or lnkd.in)",
+    }),
   projectLink: z.string()
     .url("Invalid URL format")
     .includes("coursera.org/projects/", { message: "Must be a valid Coursera project link" }),
@@ -31,7 +33,7 @@ type FormErrors = {
 };
 
 export default function Submit() {
-  const { user, profile, profileLoading } = useAuth();
+  const { user, profile, profileLoading, isDemo } = useAuth();
   const navigate = useNavigate();
   const [courseraLink, setCourseraLink] = useState("");
   const [linkedinLink, setLinkedinLink] = useState("");
@@ -46,6 +48,16 @@ export default function Submit() {
   const [showLinkedInTip, setShowLinkedInTip] = useState(false);
   const [linkedinFocused, setLinkedinFocused] = useState(false);
   const [allowSubmissions, setAllowSubmissions] = useState(true);
+
+  const fillSampleData = () => {
+    setCourseraLink("https://www.coursera.org/account/accomplishments/verify/5U7GQKAHVSVA");
+    setLinkedinLink("https://lnkd.in/p/gEcjZvRw");
+    setProjectLink("https://www.coursera.org/projects/covid-19-detection-x-ray");
+    setFormErrors({});
+    setVerifyError("");
+    setVerified(false);
+    toast.success("Actual demo links filled into the form!");
+  };
 
   useEffect(() => {
     supabase
@@ -87,7 +99,7 @@ export default function Submit() {
 
   const linksValid =
     courseraLink.includes("coursera.org/account/accomplishments/verify/") &&
-    linkedinLink.includes("linkedin.com") &&
+    (linkedinLink.includes("linkedin.com") || linkedinLink.includes("lnkd.in")) &&
     projectLink.includes("coursera.org/projects/");
 
   const handleVerify = async () => {
@@ -114,6 +126,17 @@ export default function Submit() {
     setVerifyError("");
     setVerified(false);
     setVerifiedSubmissionId(null);
+
+    // If Demo Mode: simulate verification flow seamlessly
+    if (isDemo) {
+      setTimeout(() => {
+        setVerifying(false);
+        setVerified(true);
+        setVerifiedSubmissionId("demo-verified-submission-id");
+        toast.success("✅ Certificate & LinkedIn verified successfully! (Demo Simulation)");
+      }, 1000);
+      return;
+    }
 
     try {
       // Check for existing submission of same project (only block if correct or processing)
@@ -201,7 +224,32 @@ export default function Submit() {
 
     setSubmitting(true);
     try {
-      toast.success("Submission confirmed!");
+      if (isDemo) {
+        let courseName = "COVID-19 Detection Using Chest X-Rays";
+        if (projectLink.includes("covid-19")) {
+          courseName = "COVID-19 Detection Using Chest X-Rays";
+        } else {
+          const slug = projectLink.split("/projects/")[1]?.replace(/\/$/, "") || "Guided Project";
+          courseName = slug.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+        }
+
+        const newSub = {
+          id: `demo-sub-${Date.now()}`,
+          coursera_link: courseraLink.trim(),
+          linkedin_link: linkedinLink.trim(),
+          project_link: projectLink.trim(),
+          coursera_course: courseName,
+          error_message: null,
+          status: "correct",
+          created_at: new Date().toISOString(),
+          level: "Intermediate",
+        };
+
+        const existing = JSON.parse(localStorage.getItem("verifyhub_demo_submissions") || "[]");
+        localStorage.setItem("verifyhub_demo_submissions", JSON.stringify([newSub, ...existing]));
+      }
+
+      toast.success("Submission confirmed and saved to My Submissions!");
       setCourseraLink("");
       setLinkedinLink("");
       setProjectLink("");
@@ -239,6 +287,26 @@ export default function Submit() {
           </AlertDescription>
         </Alert>
       )}
+
+      {/* Demo sample auto-fill helper */}
+      {isDemo && (
+        <div className="mb-4 p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 flex items-center justify-between">
+          <div className="text-xs">
+            <span className="font-semibold text-amber-700 dark:text-amber-300">⚡ Demo Mode Active:</span>
+            <span className="text-muted-foreground ml-1">Quickly test the submission workflow.</span>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={fillSampleData}
+            className="h-7 text-xs border-amber-500/40 bg-background hover:bg-amber-500/20 font-medium"
+          >
+            Auto-fill Sample Links
+          </Button>
+        </div>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

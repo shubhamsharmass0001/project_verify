@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { THAPAR_COLLEGE_ID, isHeadAdmin as checkHeadAdmin } from "@/lib/constants";
 import type { User, Session } from "@supabase/supabase-js";
 
-type Profile = {
+export type Profile = {
   id: string;
   user_id: string;
   full_name: string;
@@ -19,14 +19,20 @@ type Profile = {
 
 type SignUpResult = { error: string | null; rateLimited?: boolean };
 
+export type DemoRole = "student" | "admin";
+
 type AuthContextType = {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
   isAdmin: boolean;
   isHeadAdmin: boolean;
+  isDemo: boolean;
+  demoRole: DemoRole | null;
   loading: boolean;
   profileLoading: boolean;
+  loginAsDemo: (role?: DemoRole) => void;
+  exitDemo: () => void;
   signUp: (email: string, password: string, fullName: string, collegeId: string, rollNo: string, linkedinUrl?: string) => Promise<SignUpResult>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
@@ -38,13 +44,101 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const DEMO_STORAGE_KEY = "verifyhub_demo_role";
+
+const createDemoProfile = (role: DemoRole): Profile => {
+  if (role === "admin") {
+    return {
+      id: "demo-admin-profile-id",
+      user_id: "demo-admin-user-id",
+      full_name: "Prof. Aman Goel (Demo Admin)",
+      email: "agoel2_be23@thapar.edu",
+      college_id: THAPAR_COLLEGE_ID,
+      roll_no: "102103001",
+      linkedin_url: "https://linkedin.com/in/amangoel-demo",
+      score: 350,
+      total_submissions: 25,
+      correct_submissions: 25,
+      created_at: "2024-01-10T10:00:00.000Z",
+    };
+  }
+
+  return {
+    id: "demo-student-profile-id",
+    user_id: "demo-student-user-id",
+    full_name: "Alex Sharma (Demo Student)",
+    email: "student.demo@thapar.edu",
+    college_id: THAPAR_COLLEGE_ID,
+    roll_no: "102103999",
+    linkedin_url: "https://linkedin.com/in/alex-sharma-demo",
+    score: 120,
+    total_submissions: 8,
+    correct_submissions: 6,
+    created_at: "2024-02-15T09:30:00.000Z",
+  };
+};
+
+const createDemoUser = (role: DemoRole): User => ({
+  id: role === "admin" ? "demo-admin-user-id" : "demo-student-user-id",
+  app_metadata: { provider: "email" },
+  user_metadata: {
+    full_name: role === "admin" ? "Prof. Aman Goel (Demo Admin)" : "Alex Sharma (Demo Student)",
+  },
+  aud: "authenticated",
+  created_at: new Date().toISOString(),
+  email: role === "admin" ? "agoel2_be23@thapar.edu" : "student.demo@thapar.edu",
+  phone: "",
+  role: "authenticated",
+  updated_at: new Date().toISOString(),
+});
+
+const createDemoSession = (demoUser: User): Session => ({
+  access_token: "demo-jwt-token-bypass",
+  refresh_token: "demo-refresh-token",
+  expires_in: 86400,
+  expires_at: Math.floor(Date.now() / 1000) + 86400,
+  token_type: "bearer",
+  user: demoUser,
+});
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isDemo, setIsDemo] = useState(false);
+  const [demoRole, setDemoRole] = useState<DemoRole | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(true);
+
+  const setDemoState = (role: DemoRole) => {
+    const demoUser = createDemoUser(role);
+    const demoSession = createDemoSession(demoUser);
+    const demoProfile = createDemoProfile(role);
+    setUser(demoUser);
+    setSession(demoSession);
+    setProfile(demoProfile);
+    setIsAdmin(role === "admin");
+    setIsDemo(true);
+    setDemoRole(role);
+    setLoading(false);
+    setProfileLoading(false);
+    localStorage.setItem(DEMO_STORAGE_KEY, role);
+  };
+
+  const loginAsDemo = (role: DemoRole = "student") => {
+    setDemoState(role);
+  };
+
+  const exitDemo = () => {
+    localStorage.removeItem(DEMO_STORAGE_KEY);
+    setIsDemo(false);
+    setDemoRole(null);
+    setUser(null);
+    setSession(null);
+    setProfile(null);
+    setIsAdmin(false);
+  };
 
   const checkAdminStatus = async (userId: string) => {
     const { data: roles } = await supabase
@@ -98,12 +192,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshProfile = async () => {
+    if (isDemo && demoRole) {
+      setProfile(createDemoProfile(demoRole));
+      return;
+    }
     if (user) await fetchProfile(user.id, user.email ?? undefined);
   };
 
   useEffect(() => {
+    const storedDemo = localStorage.getItem(DEMO_STORAGE_KEY) as DemoRole | null;
+    if (storedDemo === "student" || storedDemo === "admin") {
+      setDemoState(storedDemo);
+      return;
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
+        const stored = localStorage.getItem(DEMO_STORAGE_KEY);
+        if (stored) return;
+
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
@@ -117,6 +224,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     supabase.auth.getSession().then(({ data: { session } }) => {
+      const stored = localStorage.getItem(DEMO_STORAGE_KEY);
+      if (stored) return;
+
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -181,8 +291,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    localStorage.removeItem(DEMO_STORAGE_KEY);
+    setIsDemo(false);
+    setDemoRole(null);
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // ignore
+    }
+    setUser(null);
+    setSession(null);
     setProfile(null);
+    setIsAdmin(false);
   };
 
   const verifyOtp = async (email: string, token: string) => {
@@ -215,9 +335,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session, 
       profile, 
       isAdmin, 
-      isHeadAdmin: checkHeadAdmin(user?.email),
+      isHeadAdmin: isDemo ? (demoRole === "admin") : checkHeadAdmin(user?.email),
+      isDemo,
+      demoRole,
       loading, 
       profileLoading, 
+      loginAsDemo,
+      exitDemo,
       signUp, 
       signIn, 
       signOut, 

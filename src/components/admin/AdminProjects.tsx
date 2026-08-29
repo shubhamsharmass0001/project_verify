@@ -67,32 +67,50 @@ export default function AdminProjects() {
     }
   };
 
+  const DEMO_ADMIN_PROJECTS: Project[] = [
+    { id: "demo-p-covid19", course_name: "COVID-19 Detection Using Chest X-Rays", level: "Intermediate", weight: 0.50 },
+    { id: "demo-p1", course_name: "Applied Machine Learning in Python", level: "Intermediate", weight: 0.50 },
+    { id: "demo-p2", course_name: "Introduction to Cloud Computing with AWS", level: "Beginner", weight: 0.25 },
+    { id: "demo-p3", course_name: "Building Deep Neural Networks with PyTorch", level: "Advanced", weight: 0.75 },
+    { id: "demo-p4", course_name: "Google Data Analytics Capstone Project", level: "Mixed", weight: 0.60 },
+  ];
+
   const fetchProjects = async (sync = false) => {
     setLoading(true);
-    const headers = await getAuthHeader();
-    const url = new URL(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-projects`);
-    if (sync) url.searchParams.set("sync", "true");
+    try {
+      const headers = await getAuthHeader();
+      const url = new URL(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-projects`);
+      if (sync) url.searchParams.set("sync", "true");
 
-    const res = await fetch(
-      url.toString(),
-      { headers }
-    );
-    if (res.ok) {
-      // const data: Project[] = await res.json();
-      // setProjects(data);
-      // const edits: Record<string, { level: string; weight: number }> = {};
-      // for (const p of data) {
-      //   edits[p.id] = { level: p.level || "Beginner", weight: p.weight ?? 0.25 };
-      // }
-      const raw = await res.json();
-      const data: Project[] = raw.map((p: any) => ({ ...p, weight: Number(p.weight) }));
-      setProjects(data);
+      const res = await fetch(
+        url.toString(),
+        { headers }
+      );
+      if (res.ok) {
+        const raw = await res.json();
+        const data: Project[] = raw.map((p: any) => ({ ...p, weight: Number(p.weight) }));
+        setProjects(data);
+        const edits: Record<string, { level: string; weight: number }> = {};
+        for (const p of data) {
+          edits[p.id] = { level: p.level || "Beginner", weight: Number(p.weight) ?? 0.25 };
+        }
+        setLocalEdits(edits);
+        setSaved({});
+      } else {
+        setProjects(DEMO_ADMIN_PROJECTS);
+        const edits: Record<string, { level: string; weight: number }> = {};
+        for (const p of DEMO_ADMIN_PROJECTS) {
+          edits[p.id] = { level: p.level, weight: p.weight };
+        }
+        setLocalEdits(edits);
+      }
+    } catch {
+      setProjects(DEMO_ADMIN_PROJECTS);
       const edits: Record<string, { level: string; weight: number }> = {};
-      for (const p of data) {
-        edits[p.id] = { level: p.level || "Beginner", weight: Number(p.weight) ?? 0.25 };
+      for (const p of DEMO_ADMIN_PROJECTS) {
+        edits[p.id] = { level: p.level, weight: p.weight };
       }
       setLocalEdits(edits);
-      setSaved({});
     }
     setLoading(false);
   };

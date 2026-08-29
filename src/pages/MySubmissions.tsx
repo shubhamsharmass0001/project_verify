@@ -20,25 +20,92 @@ type Submission = {
 };
 
 export default function MySubmissions() {
-  const { user } = useAuth();
+  const { user, isDemo } = useAuth();
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
+  const DEMO_SUBMISSIONS: Submission[] = [
+    {
+      id: "demo-sub-covid19",
+      coursera_link: "https://www.coursera.org/account/accomplishments/verify/5U7GQKAHVSVA",
+      linkedin_link: "https://lnkd.in/p/gEcjZvRw",
+      project_link: "https://www.coursera.org/projects/covid-19-detection-x-ray",
+      coursera_course: "COVID-19 Detection Using Chest X-Rays",
+      error_message: null,
+      status: "correct",
+      created_at: new Date(Date.now() - 1 * 86400000).toISOString(),
+      level: "Intermediate",
+    },
+    {
+      id: "demo-sub-1",
+      coursera_link: "https://www.coursera.org/account/accomplishments/verify/DEMO12345",
+      linkedin_link: "https://www.linkedin.com/posts/alexsharma_project1",
+      project_link: "https://www.coursera.org/projects/google-data-analytics",
+      coursera_course: "Google Data Analytics Capstone",
+      error_message: null,
+      status: "correct",
+      created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
+      level: "Beginner",
+    },
+    {
+      id: "demo-sub-3",
+      coursera_link: "https://www.coursera.org/account/accomplishments/verify/DEMO99999",
+      linkedin_link: "https://www.linkedin.com/posts/alexsharma_project3",
+      project_link: "https://www.coursera.org/projects/deep-learning-nlp-transformers",
+      coursera_course: "Transformer Models with PyTorch & HuggingFace",
+      error_message: null,
+      status: "correct",
+      created_at: new Date(Date.now() - 7 * 86400000).toISOString(),
+      level: "Advanced",
+    },
+  ];
+
   const fetchSubmissions = async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from("submissions")
-      .select("*")
-      .eq("user_id", user.id)
-      .neq("status", "processing")
-      .order("created_at", { ascending: false });
-    if (data) setSubmissions(data);
-    setLoading(false);
+    try {
+      const localStored: Submission[] = JSON.parse(localStorage.getItem("verifyhub_demo_submissions") || "[]");
+      const { data } = await supabase
+        .from("submissions")
+        .select("*")
+        .eq("user_id", user.id)
+        .neq("status", "processing")
+        .order("created_at", { ascending: false });
+
+      if (data && data.length > 0) {
+        setSubmissions([...localStored, ...data]);
+      } else if (isDemo) {
+        // Merge stored demo submissions with defaults without duplicate links
+        const merged = [
+          ...localStored,
+          ...DEMO_SUBMISSIONS.filter(
+            (d) => !localStored.some((l) => l.coursera_link === d.coursera_link)
+          ),
+        ];
+        setSubmissions(merged);
+      } else {
+        setSubmissions(localStored.length > 0 ? localStored : []);
+      }
+    } catch {
+      const localStored: Submission[] = JSON.parse(localStorage.getItem("verifyhub_demo_submissions") || "[]");
+      if (isDemo) {
+        const merged = [
+          ...localStored,
+          ...DEMO_SUBMISSIONS.filter(
+            (d) => !localStored.some((l) => l.coursera_link === d.coursera_link)
+          ),
+        ];
+        setSubmissions(merged);
+      } else {
+        setSubmissions(localStored);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
   useEffect(() => {
     fetchSubmissions();
-  }, [user]);
+  }, [user, isDemo]);
 
   const levelOrder = ["Beginner", "Intermediate", "Advanced", "Mixed"];
   const levelColors: Record<string, string> = {
