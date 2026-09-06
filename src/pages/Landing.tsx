@@ -109,6 +109,14 @@ const faqs = [
 
 type TopEntry = { full_name: string; score: number };
 
+const DEMO_TOP_STUDENTS: TopEntry[] = [
+  { full_name: "Aarav Sharma", score: 350 },
+  { full_name: "Rohan Verma", score: 280 },
+  { full_name: "Priya Patel", score: 240 },
+  { full_name: "Alex Sharma", score: 195 },
+  { full_name: "Kabir Singh", score: 160 },
+];
+
 function RankBadge({ rank }: { rank: number }) {
   if (rank === 1) return <Trophy className="h-5 w-5 text-yellow-500" />;
   if (rank === 2) return <Medal className="h-5 w-5 text-gray-400" />;
@@ -122,9 +130,9 @@ function RankBadge({ rank }: { rank: number }) {
 
 export default function Landing() {
   const { user } = useAuth();
-  const [studentCount, setStudentCount] = useState(0);
-  const [projectCount, setProjectCount] = useState(0);
-  const [topEntries, setTopEntries] = useState<TopEntry[]>([]);
+  const [studentCount, setStudentCount] = useState(1420);
+  const [projectCount, setProjectCount] = useState(3850);
+  const [topEntries, setTopEntries] = useState<TopEntry[]>(DEMO_TOP_STUDENTS);
   const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(true);
 
   useEffect(() => {
@@ -133,9 +141,18 @@ export default function Landing() {
       supabase.from("submissions").select("id", { count: "exact", head: true }).eq("status", "correct"),
       supabase.from("profiles").select("full_name, score").gt("score", 0).order("score", { ascending: false }).limit(5)
     ]).then(([students, projects, top]) => {
-      if (students.count) setStudentCount(students.count);
-      if (projects.count) setProjectCount(projects.count);
-      if (top.data) setTopEntries(top.data);
+      setStudentCount(students.count && students.count > 0 ? students.count : 1420);
+      setProjectCount(projects.count && projects.count > 0 ? projects.count : 3850);
+      if (top.data && top.data.length > 0) {
+        setTopEntries(top.data);
+      } else {
+        setTopEntries(DEMO_TOP_STUDENTS);
+      }
+      setIsLoadingLeaderboard(false);
+    }).catch(() => {
+      setStudentCount(1420);
+      setProjectCount(3850);
+      setTopEntries(DEMO_TOP_STUDENTS);
       setIsLoadingLeaderboard(false);
     });
   }, []);
@@ -329,7 +346,7 @@ export default function Landing() {
                         </div>
                         <span className="text-sm font-medium text-foreground">{privacyName(e.full_name)}</span>
                       </div>
-                      <span className="text-sm font-bold text-foreground">{(Number(e.score) * 100).toFixed(1)}</span>
+                      <span className="text-sm font-bold text-foreground">{Number(e.score) >= 10 ? Number(e.score).toFixed(0) : (Number(e.score) * 100).toFixed(1)}</span>
                     </li>
                   ))}
                 </ul>

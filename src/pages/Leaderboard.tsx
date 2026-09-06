@@ -42,49 +42,76 @@ export default function Leaderboard() {
 
   const DEMO_LEADERBOARD_ENTRIES: LeaderboardEntry[] = [
     {
-      user_id: "demo-admin-id",
-      full_name: "Prof. Aman Goel",
+      user_id: "demo-student-1",
+      full_name: "Aarav Sharma",
       college_name: "Thapar Institute of Engineering and Technology",
       college_id: "d8958a90-d06a-467e-818d-64277f84f5c3",
-      correct_submissions: 25,
+      correct_submissions: 28,
       score: 350,
-      updated_at: new Date(Date.now() - 3600000).toISOString(),
+      updated_at: new Date(Date.now() - 1800000).toISOString(),
     },
     {
-      user_id: "demo-user-2",
+      user_id: "demo-student-2",
       full_name: "Rohan Verma",
       college_name: "Thapar Institute of Engineering and Technology",
       college_id: "d8958a90-d06a-467e-818d-64277f84f5c3",
-      correct_submissions: 18,
+      correct_submissions: 22,
+      score: 280,
+      updated_at: new Date(Date.now() - 3600000).toISOString(),
+    },
+    {
+      user_id: "demo-student-3",
+      full_name: "Priya Patel",
+      college_name: "Thapar Institute of Engineering and Technology",
+      college_id: "d8958a90-d06a-467e-818d-64277f84f5c3",
+      correct_submissions: 19,
       score: 240,
       updated_at: new Date(Date.now() - 7200000).toISOString(),
     },
     {
-      user_id: "demo-student-id",
+      user_id: "demo-student-user-id",
       full_name: "Alex Sharma (Demo Student)",
       college_name: "Thapar Institute of Engineering and Technology",
       college_id: "d8958a90-d06a-467e-818d-64277f84f5c3",
-      correct_submissions: 6,
-      score: 120,
+      correct_submissions: 15,
+      score: 195,
       updated_at: new Date(Date.now() - 14400000).toISOString(),
     },
     {
-      user_id: "demo-user-4",
-      full_name: "Priya Patel",
-      college_name: "Thapar Institute of Engineering and Technology",
-      college_id: "d8958a90-d06a-467e-818d-64277f84f5c3",
-      correct_submissions: 5,
-      score: 95,
-      updated_at: new Date(Date.now() - 28800000).toISOString(),
-    },
-    {
-      user_id: "demo-user-5",
+      user_id: "demo-student-5",
       full_name: "Kabir Singh",
       college_name: "Thapar Institute of Engineering and Technology",
       college_id: "d8958a90-d06a-467e-818d-64277f84f5c3",
-      correct_submissions: 3,
-      score: 60,
-      updated_at: new Date(Date.now() - 57600000).toISOString(),
+      correct_submissions: 12,
+      score: 160,
+      updated_at: new Date(Date.now() - 28800000).toISOString(),
+    },
+    {
+      user_id: "demo-student-6",
+      full_name: "Ananya Gupta",
+      college_name: "Thapar Institute of Engineering and Technology",
+      college_id: "d8958a90-d06a-467e-818d-64277f84f5c3",
+      correct_submissions: 10,
+      score: 135,
+      updated_at: new Date(Date.now() - 43200000).toISOString(),
+    },
+    {
+      user_id: "demo-student-7",
+      full_name: "Ishaan Malhotra",
+      college_name: "Thapar Institute of Engineering and Technology",
+      college_id: "d8958a90-d06a-467e-818d-64277f84f5c3",
+      correct_submissions: 8,
+      score: 110,
+      updated_at: new Date(Date.now() - 86400000).toISOString(),
+    },
+    {
+      user_id: "demo-student-8",
+      full_name: "Sneha Reddy",
+      college_name: "Thapar Institute of Engineering and Technology",
+      college_id: "d8958a90-d06a-467e-818d-64277f84f5c3",
+      correct_submissions: 6,
+      score: 85,
+      updated_at: new Date(Date.now() - 129600000).toISOString(),
     },
   ];
 
@@ -236,7 +263,7 @@ export default function Leaderboard() {
                       <TableCell className="font-medium">{e.full_name}</TableCell>
                       <TableCell className="text-muted-foreground">{e.college_name}</TableCell>
                       <TableCell className="text-center">{e.correct_submissions}</TableCell>
-                      <TableCell className="text-center font-bold text-primary">{(Number(e.score) * 100).toFixed(2)}</TableCell>
+                      <TableCell className="text-center font-bold text-primary">{Number(e.score) >= 10 ? Number(e.score).toFixed(0) : (Number(e.score) * 100).toFixed(2)}</TableCell>
                       <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
                         {format(new Date(e.updated_at), "MMM d, yyyy")}
                       </TableCell>
